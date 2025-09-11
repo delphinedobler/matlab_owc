@@ -34,7 +34,7 @@ if not(isfolder(outdir))
 end
 
 % DD (2024/09 - 4.3) : Configuration parameter to select graph format
-graph_format         = 'eps'; % 'png' or 'eps'
+graph_format         = 'png'; % 'png' or 'eps'
 if strcmp(graph_format,'png')
     graph_print_option = '-dpng';
 end
@@ -155,24 +155,43 @@ if( max(LONG)+30>360 | min(LONG)-30<0 ) % if there are float data within 30 deg 
   end
 end
 
-
+% float path
 plot(LONG,LAT,'r-');
 hold on
+% historical points
 plot(x,y,'b.')
-%legend('float','historical points','Location','Best')
-plot(coastdata_x,coastdata_y,'k.-');
 
-for i=1:n
-  h=plot(LONG(i),LAT(i),'+');
-  set(h,'color',c(i,:));
-  j=text(LONG(i),LAT(i),int2str(PROFILE_NO(i)));
-  set(j,'color',c(i,:),'fontsize',12,'hor','cen');
-end
+% [DS2025/]
+% legend('float','historical points', 'Location', 'Best')
+% % coast line data
+% plot(coastdata_x, coastdata_y, 'k.-');
+% 
+% for i = 1:n
+%     h = plot(LONG(i), LAT(i), '+');
+%     set(h, 'color', c(i, :));
+%     j = text(LONG(i), LAT(i), int2str(PROFILE_NO(i)));
+%     set(j, 'color', c(i,:),'fontsize', 12, 'hor', 'cen');
+% end % for i = 1:n
+LLscat = scatter(LONG, LAT, '+');
+LLscat.CData = c;
+LLtxt = text(LONG, LAT, strsplit(num2str(PROFILE_NO(:)')));
+for i = 1:n
+    LLtxt(i).Color = c(i, :);
+end % for i = 1:n
+% coast line data
+plot(coastdata_x, coastdata_y, 'k.-');
+legend('float', 'historical points', 'location','Best')
+% [/DS2025]
+
 axis([min(LONG)-30, max(LONG)+30, min(LAT)-20, max(LAT)+20])
 set(gca,'FontSize',12)
 xlabel('Longitude');
 ylabel('Latitude');
-title( strcat(title_floatname, ' profile locations with historical data' ) );
+
+% [DS2025/]
+%title( strcat(title_floatname, ' profile locations with historical data' ) );
+title([title_floatname, ' profile locations with historical data']);
+% [/DS2025]
 
 h=gca;
 xticks=get(h,'XTick');
@@ -193,7 +212,15 @@ end
 set(gca,'XTickLabel',xticklabels);
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
+
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation', ...
+%                'portrait', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+    'paperposition', [0.25, 0.75, 8.0, 9.5]);
+% [/DS2025]
+
 print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1.',graph_format));
 
 
@@ -215,16 +242,32 @@ jj = ok;
 
 colormap(jet(n));
 c=colormap;
-qq = plot(PTMP(:,jj), SAL(:,jj));
+
+% [DS2025/]
+%  qq = plot(PTMP(:,jj), SAL(:,jj));
+qq = plot(SAL(:, jj), PTMP(:, jj));
+% [/DS2025]
+
 for i=1:length(jj)
   set(qq(i),'color',c(jj(i),:)) ;
 end
 hold on
-legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+
+% [DS2025/]
+% - adding the legend should be the last thing to add if you are planning
+% to limit what it shows as matla will just append what is added
+% legend(int2str([PROFILE_NO(jj)]'), ...
+%                'Location', 'NorthEastOutside')
+% [/DS2025]
 
 for i=1:n % plot all remaining profiles
-  qq = plot( PTMP(:,i), SAL(:,i) );
-  set(qq,'color',c(i,:)) ;
+    
+    % [DS2025/]
+    %  qq = plot( PTMP(:,i), SAL(:,i) );
+    qq = plot(SAL(:, i), PTMP(:, i));
+    % [/DS2025]
+    
+    set(qq,'color',c(i,:)) ;
 end
 
 % DD (2024/09 - 4.1) : correction when several calibration series: use of saved
@@ -232,27 +275,61 @@ end
 %[tlevels, plevels, index, var_s_Thetalevels, Thetalevels] = find_10thetas( SAL, PTMP, PRES, la_ptmp, use_theta_gt, use_theta_lt, use_pres_gt, use_pres_lt, use_percent_gt);
 
 for i=1:n
-  b = find( isnan(index(:,i))==0 );
-  a = index(b,i);
-  if ~isempty(a)
-   h = errorbar( la_ptmp(a,i), mapped_sal(a,i), mapsalerrors(a,i), 'o', 'color', c(i,:) );
-  end
+    b = find( isnan(index(:,i))==0 );
+    a = index(b,i);
+    if ~isempty(a)
+        
+        % [DS2025/]
+        %h = errorbar( la_ptmp(a, i), mapped_sal(a, i), mapsalerrors(a, i),'o', 'color', c(i, :) );
+         h = errorbar( mapped_sal(a, i), la_ptmp(a, i), mapsalerrors(a, i), 'horizontal','o', 'color', c(i, :));
+        % [/DS2025]  
+    end
 end
 
-view([90 -90]);
+% [DS2025/]
+legend(int2str([PROFILE_NO(jj)]'),'Location', 'NorthEastOutside')
+% [/DS2025]
+
+% [DS2025/]
+% - no need to rotate and create a 3d plot since errorbars can be horizontal
+%            view([90 -90]);
+% [/DS2025]
+
 set(gca,'FontSize',12)
-ylabel('Salinity (PSS-78)');
-xlabel('\theta ^{\circ} C');
+
+% [DS2025/]
+% ylabel('Salinity (PSS-78)');
+% xlabel('\theta ^{\circ} C');
+xlabel('Salinity (PSS-78)');
+ylabel('\theta ^{\circ} C');
+% [/DS2025]
 
 max_s=max([max(SAL),max(mapped_sal)])+.1;
 min_s=min([min(SAL),min(mapped_sal)])-.1;
 max_t=max(max(PTMP))+1;
 min_t=min(min(PTMP))-1;
-axis([min_t,max_t,min_s,max_s]);
+
+% [DS2025/]
+% axis([min_t, max_t, min_s, max_s]);
+axis([min_s, max_s, min_t, max_t]);
+% [/DS2025]
 
 drawnow
-title( strcat( title_floatname, ' uncalibrated float data (-) and mapped salinity (o) with objective errors' ) );
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
+
+% [DS2025/]
+% title( strcat( title_floatname,' uncalibrated float data (-) and mapped salinity (o) with objective errors' ) );
+title({[title_floatname ' uncalibrated float data (-) and'],'mapped salinity (o) with objective errors'});
+% [/DS2025]
+
+
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation', ...
+%                'portrait', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+                'paperposition', [0.25, 0.75, 8.0, 9.5]);
+% [/DS2025]
+
 print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_2.',graph_format));
 
 
@@ -338,7 +415,13 @@ ylabel('\Delta S (PSS-78)')
 title({strcat(title_floatname, ' vertically-averaged salinity (PSS-78)');'additive correction \Delta S with errors'});
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
+
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation','portrait',  'paperposition', [0.25, 0.75, 8.0, 9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+% [/DS2025]
+
 print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_3.',graph_format));
 
 
@@ -360,44 +443,81 @@ jj = ok;
 
 colormap(jet(n));
 c=colormap;
-qq=plot( PTMP(:,jj), cal_SAL(:,jj) );
+
+% [DS2025/]
+%  qq = plot( PTMP(:, jj), cal_SAL(:, jj) );
+qq = plot(cal_SAL(:, jj), PTMP(:, jj));
+% [/DS2025]
+
 for i=1:length(jj)
  set(qq(i),'color',c(jj(i),:)) ;
 end
 hold on;
-legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+
+% [DS2025/]
+% legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+% [/DS2025] 
 
 for i=1:n % plot all remaining profiles
-  qq = plot( PTMP(:,i), cal_SAL(:,i) );
-  set(qq,'color',c(i,:)) ;
+    
+    % [DS2025/]
+    %  qq = plot( PTMP(:, i), cal_SAL(:, i) );
+    qq = plot(cal_SAL(:, i), PTMP(:, i));
+    % [/DS2025]
+    
+    set(qq,'color',c(i,:)) ;
 end
 
 for i=1:n
-  b = find( isnan(index(:,i))==0 );
-  a = index(b,i);
-  if ~isempty(a)
-    h = errorbar( la_ptmp(a,i), mapped_sal(a,i), mapsalerrors(a,i), 'o', 'color', c(i,:));
-  end
+    b = find( isnan(index(:,i))==0 );
+    a = index(b,i);
+    if ~isempty(a)
+        % [DS2025/]
+        % h = errorbar( la_ptmp(a, i), mapped_sal(a, i), mapsalerrors(a, i), ...
+        %                            'o', 'color', c(i, :));
+        h = errorbar(mapped_sal(a, i), la_ptmp(a, i), mapsalerrors(a, i), 'horizontal', ...
+            'o', 'color', c(i, :));
+        % [/DS2025]
+    end
 end
 
-view([90 -90]);
-set(gca,'FontSize',12)
-xlabel('\theta ^{\circ} C')
-ylabel('Salinity (PSS-78)')
+% [DS2025/]
+% view([90 -90]);
+% [/DS2025]set(gca,'FontSize',12)
+
+% [DS2025/]  
+% xlabel('\theta ^{\circ} C')
+% ylabel('Salinity (PSS-78)')
+ylabel('\theta ^{\circ} C')
+xlabel('Salinity (PSS-78)')
+% [/DS2025]
 
 max_s=max([max(max(cal_SAL)),max(max(mapped_sal))])+.1;
 min_s=min([min(min(cal_SAL)),min(min(mapped_sal))])-.1;
 max_t=max(max(PTMP))+1;
 min_t=min(min(PTMP))-1;
 if(isnan(min_s)==0)
-  axis([min_t,max_t,min_s,max_s]);
+    % [DS2025/]
+    % axis([min_t,max_t, min_s, max_s]);
+    axis([min_s,max_s, min_t, max_t]);
+    % [/DS2025]
 end
 
 drawnow
-title( strcat(title_floatname, ' calibrated float data (-) and mapped salinity (o) with objective errors' ) );
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_4.',graph_format));
+% [DS2025/]
+% title( strcat(title_floatname,' calibrated float data (-) and mapped salinity (o) with objective errors' ) );
+title({[title_floatname ' calibrated float data (-) and'], ...
+    'mapped salinity (o) with objective errors'});
+legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+% [/DS2025]
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+%   set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation','portrait', 'paperposition', [0.25, 0.75, 8.0 ,9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+    'paperposition', [0.25, 0.75, 8.0 ,9.5]);
+% [/DS2025]
 
+print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_4.',graph_format));
 
 % Brian King's plot: salinity anomaly time series on theta levels (figure 5) ------------
 
@@ -423,10 +543,21 @@ d.LATITUDE = LAT;
 d.PROFILE_NO = PROFILE_NO;
 fl = anom(d,fl); % Brian King's routine
 subplot('position',[.1 .45 .8 .35])
-title(['       Salinity anom on theta.    ' title_floatname])
+
+% [DS2025/]
+%                title(['       Salinity anom on theta.    ' title_floatname])
+                title(['Salinity anom on theta.' title_floatname])
+% [/DS2025]
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.5,8,10]);
+
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+%  set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation', 'portrait', 'paperposition', [0.25, 0.5, 8.0, 10.0]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches',  ...
+                    'paperposition', [0.25, 0.5, 8.0, 10.0]);
+% [/DS2025]
+
 print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_5.',graph_format));
 
 
@@ -639,12 +770,18 @@ for iseq=1:n_seq
     xlabel('float profile number');
 
     drawnow
-    set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-    % CC changes 06/23 figure 6 
+    
+    % [DS2025/]
+    % - matlab indicates that 'paperorientation' is no longer a valid parameter
+    %  set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperorientation', 'portrait', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+    set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperposition', [0.25, 0.75, 8.0, 9.5]);
+    % [/DS2025]
+    
+    % CC changes 06/23 figure 6
     if length(unique_cal(unique_cal>0))==1
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6.',graph_format));
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6.',graph_format));
     else
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq)),'.',graph_format));
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq)),'.',graph_format));
     end
         
 end % for iseq
@@ -675,7 +812,13 @@ subplot('position',[.1 .45 .8 .35])
 title(['Calibrated salinity anom on theta. ' title_floatname])
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.5,8,10]);
+
+%[DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches',' paperorientation','portrait', 'paperposition', [0.25, 0.5, 8.0, 10.0]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperposition', [0.25, 0.5, 8.0, 10.0]);
+% [/DS2025]
+
 print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_7.',graph_format));
 
 % Paul Robbins' analyse variance plot (figure 8) ------------
@@ -712,7 +855,13 @@ for iseq=1:n_seq
     x = get(gca,'xlim');
     y = get(gca,'ylim');
     xlabel('PSS-78')
-    title(strcat('OW chosen levels - ', pn_float_name));
+    
+    % [DS2025/]
+    % - it apprears strcat() strips trailing blanks
+    % title(strcat('OW chosen levels - ', pn_float_name));
+    title(['OW chosen levels - ', pn_float_name]);
+    % [/DS2025]
+    
     for ilevel=1:10
         hold on
         plot(x,[tlevels(ilevel,iseq) tlevels(ilevel,iseq)] ,'g-');
@@ -726,8 +875,14 @@ for iseq=1:n_seq
         hold on
         plot(x,[tlevels(ilevel,iseq) tlevels(ilevel,iseq)] ,'g-');
     end
-    %title('Salinity Variance on Theta')
-    title(['Salinity Variance on Theta, cycles ' num2str(PROFILE_NO(calindex(1))) '-' num2str(PROFILE_NO(calindex(end))) ])  %CC changes 06/23
+    
+    % [DS2025/]
+    % title(['Salinity Variance on Theta, cycles '  num2str(PROFILE_NO(calindex(1))) '-' num2str(PROFILE_NO(calindex(end))) ])  %CC changes 06/23
+    title({'Salinity Variance on Theta', ...
+        ['cycles: ' num2str(PROFILE_NO(calindex(1))) '-' ...
+        num2str(PROFILE_NO(calindex(end)))]})
+    % [/DS2025]
+    
     ylabel('Potential temp (^{\circ}C)')
     xlabel('salinity variance')
     %set(gca,'ylim',y)
@@ -739,7 +894,12 @@ for iseq=1:n_seq
     x = get(gca,'xlim');
     xlabel('^{\circ}C')
     ylabel('Pressure (dbar)')
-    title(strcat('OW chosen levels - ', pn_float_name));
+    
+    %[DS2025/]
+    %title(strcat('OW chosen levels - ', pn_float_name));
+    title(['OW chosen levels - ', pn_float_name]);
+    % [/DS2025]    
+    
     for ilevel=1:10
         hold on
         plot(x,[-plevels(ilevel,iseq) -plevels(ilevel,iseq)] ,'g-');
@@ -751,7 +911,12 @@ for iseq=1:n_seq
     plot(unique_SAL,-unique_PRES,'b-'); %CC changes 06/23
     x = get(gca,'xlim');
     xlabel('PSS-78')
-    title(strcat('OW chosen levels - ', pn_float_name));
+    
+    % [DS2025/]
+    % title(strcat('OW chosen levels - ', pn_float_name));
+    title(['OW chosen levels - ', pn_float_name]);
+    % [/DS2025]
+    
     for ilevel=1:10
         hold on
         plot(x,[-plevels(ilevel,iseq) -plevels(ilevel,iseq)] ,'g-');
@@ -759,11 +924,20 @@ for iseq=1:n_seq
 
 
     drawnow
-    set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.5,.25,8,10.25]);
+    
+    % [DS2025/]
+    % - matlab indicates that 'paperorientation' is no longer a valid parameter
+    %                        set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+    %                            'paperorientation', 'portrait', 'paperposition', ...
+    %                            [0.5, 0.25, 8.0, 10.25]);
+    set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+        'paperposition', [0.5, 0.25, 8.0, 10.25]);
+    % [/DS2025] 
+    
     if length(unique_cal(unique_cal>0))==1
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8.',graph_format));
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8.',graph_format));
     else
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq)), '.',graph_format));
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq)), '.',graph_format));
     end
 
 end
