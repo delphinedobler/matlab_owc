@@ -29,9 +29,15 @@ function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configurati
 %po_system_configuration = load_configuration( 'ow_config.txt' );
 
 outdir=[ po_system_configuration.FLOAT_PLOTS_DIRECTORY pn_float_dir ];
-if not(isfolder(outdir))
+%[CC202509/] use exist(...,'dir')== 7 instead of isfolder for compatibility
+% if not(isfolder(outdir))
+%     mkdir(outdir)
+% end
+if not(exist(outdir,'dir') == 7)
     mkdir(outdir)
 end
+
+%[/CC202509]
 
 % DD (2024/09 - 4.3) : Configuration parameter to select graph format
 graph_format         = 'png'; % 'png' or 'eps'
@@ -531,7 +537,10 @@ fl.plot = 1;
 % DD (2024/09 - 4.5) : automatically set y-axis limits using tlevels; 2025/01: modified from CC's comment
 % fl.yaxes = [2 5 20];
 % fl.yaxes = [floor(min(tlevels,[],'all')) ceil(max(tlevels,[],'all')) ceil(max(TEMP))];
-fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+% [CC202509/]  % keep compatibility with Matlab versions <2018b
+%fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+fl.yaxes = [floor(min(min(TEMP(:)),2)) ceil(min(max(tlevels(:)),5)) ceil(min(max(TEMP(:)),20))];
+% [/CC202509]
 d.PSAL = SAL;
 d.TEMP = TEMP;
 d.PRES = PRES;
@@ -797,7 +806,12 @@ fl.useqc = '0';
 fl.plot = 1;
 % DD (2024/09 - 4.5) : automatically set y-axis limits using tlevels. 2025/01: modified from CC's comment.
 %fl.yaxes = [2 5 20];
-fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+
+% [CC202509/]  % keep compatibility with Matlab versions <2018b
+%fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+fl.yaxes = [floor(min(min(TEMP(:)),2)) ceil(min(max(tlevels(:)),5)) ceil(min(max(TEMP(:)),20))];
+% [/CC202509]
+
 d.PSAL = cal_SAL;
 d.TEMP = TEMP;
 d.PRES = PRES;
