@@ -1,31 +1,58 @@
 
-function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configuration )
+function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configuration,varargin )
 
+%   USAGE :   plot_diagnostics_ow( pn_float_dir, pn_float_name,po_system_configuration)
 %
-% Annie Wong, 14 June 2011
-% Breck Owens, October 2006
+%   Additional options can be specified as name/values pairs:
 %
-% Delphine Dobler (DD), August 2024: 
+%    'goHeadless' (logical)  Optional flag to disable interactive plotting. 
+%                            Default : false.
+%                            When true, figures are generated but not
+%                            displayed allowing scripts to run in batch
+%                            mode without opening figure windows.
+%
+%     'appendRef' (string)   Optional suffix to append to figure names
+%                            could be based on the reference data used
+%                            (eg.6902865_3_ctd.png). 
+%                            Default : '' (no suffix), other suffix should
+%                            start with '_' (eg. '_ctd')
+%
+%    'pltFileType' (string)  optional string to define the format ot the
+%                            output plots. 
+%                            Default  : '- depsc', alternative are '-dpng'
+%                            or other formattype used by the print matlab
+%                            function
+%
+%    ex: plot_diagnostics_ow( pn_float_dir, pn_float_name,po_system_configuration,'goHeadless',true,'pltFileType','-dpng')
+%-----------------------------------
+% Annie Wong, 14 June 2011 Breck Owens, October 2006
+%
+% Delphine Dobler (DD), August 2024:
 %            2 - create output directory if they do not exist already
 % Delphine Dobler (DD), September 2024:
 %            4.1 - Use of theta levels from those now saved during
-%            calculate_piecewisefit function call (also corrects graph 2 
-%            and 4 in case of several calibration series).
-%            4.2 - For graph 6 and 8: Change indexes names by a more 
-%            explicit terminology: usage of iseq, istep, ilevel, iplot instead of i,j,k ...
-%            Remove unused parameter lines.
-%            These changes were not marked done for the sake of lisibility 
-%            4.3 - Add a configuration parameter to
-%            select from eps or png type of graph format. 
-%            4.4 - Enhance Graph 3: curate legend content, split title in two
-%            lines, add a grid, position the legend outside the graph.
-%            4.5 - Automalically set graph 5 y-axis limits from selected thetas
+%            calculate_piecewisefit function call (also corrects graph 2
+%            and 4 in case of several calibration series). 4.2 - For graph
+%            6 and 8: Change indexes names by a more explicit terminology:
+%            usage of iseq, istep, ilevel, iplot instead of i,j,k ...
+%            Remove unused parameter lines. These changes were not marked
+%            done for the sake of lisibility 4.3 - Add a configuration
+%            parameter to select from eps or png type of graph format. 4.4
+%            - Enhance Graph 3: curate legend content, split title in two
+%            lines, add a grid, position the legend outside the graph. 4.5
+%            - Automalically set graph 5 y-axis limits from selected thetas
 %            and set the upper bound to 14°C.
-% Delphine Dobler (DD), January 2025: account for Cecile Cabanes feedback on changes
+% Delphine Dobler (DD), January 2025: account for Cecile Cabanes feedback
+% on changes
 %
 % Dirk Slawinski [DS2025] : fixes plots for newer Matlab versions
-%
-%--------------------------------------------------------------------------
+
+% C.Cabanes[CC20250916], from Dirk Slawinski (PR#18): 
+% - add a goHeadless option to toggle headless mode [DS2025]
+% - add an appendRef option to append a suffix to figure names 
+% - following the same logic, add a pltFileType option to choose between
+%   differents output file types
+%--------------------------------------------------------------------
 
 %pn_float_dir='uw/';
 %pn_float_name='R5902134';
@@ -39,17 +66,50 @@ outdir=[ po_system_configuration.FLOAT_PLOTS_DIRECTORY pn_float_dir ];
 if not(exist(outdir,'dir') == 7)
     mkdir(outdir)
 end
-
 %[/CC202509]
 
-% DD (2024/09 - 4.3) : Configuration parameter to select graph format
-graph_format         = 'png'; % 'png' or 'eps'
-if strcmp(graph_format,'png')
-    graph_print_option = '-dpng';
+
+% [CC20250916/] % read options
+if mod(length(varargin),2)~=0
+    error('Check the imput arguments : name/value')
 end
-if strcmp(graph_format,'eps')
-    graph_print_option = '-depsc';
+
+optionName = varargin(1:2:end);
+optionValues = varargin(2:2:end);
+userOption = cell2struct(optionValues,optionName,2);
+
+% Default 
+option.goHeadless = false;
+option.appendRef = '';
+option.pltFileType = '-depsc';
+
+knownFields = fieldnames(option);
+
+extraField = setdiff(fieldnames(userOption),knownFields);
+
+if ~isempty(extraField)
+    error('unknown option for plot_diagnostics_ow.m : %s',strjoin(extraFields, ', '));
 end
+
+% User Option 
+for  k = 1:length(knownFields)
+     field = knownFields{k};
+     if isfield(userOption,field)==1
+         option.(field) = userOption.(field);
+     end
+end
+
+graph_print_option = option.pltFileType;
+goHeadless = option.goHeadless;
+% check and format the suffix for figure names
+if ~isempty(option.appendRef)
+    if option.appendRef(1) ~= '_' % ensure the suffix starts with '_'
+       option.appendRef=['_', option.appendRef];
+    end
+end
+appendRef = option.appendRef;
+%[/CC20250916]
+
 
 close all
 
@@ -127,7 +187,15 @@ load( fullfile( po_system_configuration.CONFIG_DIRECTORY, po_system_configuratio
 
 [m,n] = size(PRES);
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -230,12 +298,20 @@ set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
     'paperposition', [0.25, 0.75, 8.0, 9.5]);
 % [/DS2025]
 
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1.',graph_format));
-
+%print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1')); %[CC20250916]
+print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1',appendRef)); 
 
 % plot the uncalibrated theta-S curves from the float (figure 2) --------
 
-figure;
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',14)
@@ -339,8 +415,8 @@ set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
                 'paperposition', [0.25, 0.75, 8.0, 9.5]);
 % [/DS2025]
 
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_2.',graph_format));
-
+% print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_2')); %[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_2',appendRef));
 
 % calibration curve (figure 3) --------------------------
 
@@ -373,7 +449,15 @@ for i=1:n
    end
 end
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -431,12 +515,20 @@ drawnow
 set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
 % [/DS2025]
 
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_3.',graph_format));
-
+% print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_3'));%[CC20250916]
+ print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_3',appendRef))
 
 % plot the calibrated theta-S curves from the float (figure 4) --------------------------
 
-figure;
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',14)
@@ -526,11 +618,20 @@ set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
     'paperposition', [0.25, 0.75, 8.0 ,9.5]);
 % [/DS2025]
 
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_4.',graph_format));
-
+% print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_4'));%[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_4',appendRef))
+ 
 % Brian King's plot: salinity anomaly time series on theta levels (figure 5) ------------
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -557,8 +658,8 @@ fl = anom(d,fl); % Brian King's routine
 subplot('position',[.1 .45 .8 .35])
 
 % [DS2025/]
-%                title(['       Salinity anom on theta.    ' title_floatname])
-                title(['Salinity anom on theta.' title_floatname])
+% title(['       Salinity anom on theta.    ' title_floatname])
+title(['Salinity anom on theta.' title_floatname])
 % [/DS2025]
 
 drawnow
@@ -570,8 +671,8 @@ set(gcf, 'papertype', 'usletter', 'paperunits', 'inches',  ...
                     'paperposition', [0.25, 0.5, 8.0, 10.0]);
 % [/DS2025]
 
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_5.',graph_format));
-
+% print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_5'));%[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_5',appendRef))
 
 % plot salinity time series on theta levels with the smallest S variance (figure 6) ------------
 
@@ -749,8 +850,16 @@ for iseq=1:n_seq
             end
         end
     end
-
-    figure
+    
+    % [DS2025/]
+    % figure;
+    if(goHeadless)
+        figure('Visible', 'off');
+    else % if(goHeadless)
+        figure('Visible', 'on');
+    end % if(goHeadless)
+    % [/DS2025]
+    
     set(gcf,'defaultaxeslinewidth',2)
     set(gcf,'defaultlinelinewidth',2)
     set(gcf,'defaultaxesfontsize',16)
@@ -791,16 +900,26 @@ for iseq=1:n_seq
     
     % CC changes 06/23 figure 6
     if length(unique_cal(unique_cal>0))==1
-        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6'));%[CC20250916]
+        print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_6',appendRef))
     else
-        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq)),'.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq))));%[CC20250916]
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq)),appendRef));
     end
         
 end % for iseq
 
 % Brian King's plot: salinity anomaly time series on theta levels (figure 7) ------------
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -836,7 +955,8 @@ drawnow
 set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperposition', [0.25, 0.5, 8.0, 10.0]);
 % [/DS2025]
 
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_7.',graph_format));
+% print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_7'));%[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_7',appendRef))
 
 % Paul Robbins' analyse variance plot (figure 8) ------------
 
@@ -859,7 +979,14 @@ for iseq=1:n_seq
     unique_PTMP = PTMP(:, calindex);
     unique_PRES = PRES(:, calindex);
 
-    figure
+    % [DS2025/]
+    % figure;
+    if(goHeadless)
+        figure('Visible', 'off');
+    else % if(goHeadless)
+        figure('Visible', 'on');
+    end % if(goHeadless)
+    % [/DS2025]
     set(gcf,'defaultaxeslinewidth',1)
     set(gcf,'defaultlinelinewidth',1)
     set(gcf,'defaultaxesfontsize',12)
@@ -952,9 +1079,11 @@ for iseq=1:n_seq
     % [/DS2025] 
     
     if length(unique_cal(unique_cal>0))==1
-        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8'));%[CC20250916]
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8',appendRef));
     else
-        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq)), '.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq))));%[CC20250916]
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq)),appendRef));
     end
 
 end
