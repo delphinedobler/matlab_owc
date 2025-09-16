@@ -22,7 +22,7 @@ function [ pa_grid_lat, pa_grid_long, pa_grid_dates, pa_grid_box_id ] = get_regi
 % corresponding boxes ids. Additional minor modifications: comment date_hist as it is unused, and
 % correct indentation twice.
 %
-% % K. Walicka (2025) : update for Matlab 2024b
+% % K. Walicka [KW2025] : update for Matlab 2024b
 
 pa_grid_lat    = [ ] ;
 pa_grid_long   = [ ] ;

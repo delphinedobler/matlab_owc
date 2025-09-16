@@ -22,6 +22,9 @@ function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configurati
 %            4.5 - Automalically set graph 5 y-axis limits from selected thetas
 %            and set the upper bound to 14°C.
 % Delphine Dobler (DD), January 2025: account for Cecile Cabanes feedback on changes
+%
+% Dirk Slawinski [DS2025] : fixes plots for newer Matlab versions
+%
 %--------------------------------------------------------------------------
 
 %pn_float_dir='uw/';

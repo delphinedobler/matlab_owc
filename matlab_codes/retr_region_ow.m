@@ -31,8 +31,7 @@ function [ pa_grid_sal, pa_grid_ptmp, pa_grid_pres, pa_grid_lat, pa_grid_long, p
 %     - 3.2: save loaded data, and at each following profile, 
 %            reload only new boxes and delete unused.
 %
-% % K. Walicka (2025) : update for Matlab 2024b
-% % C.Cabanes (2025) : update for Matlab 2024b
+% % K. Walicka [KW2025] : update for Matlab 2024b
 
 zz = (isnan(P)==0);
 max_p = max(P(zz))+map_p_delta; % max depth to retrieve historical data is deepest Argo point plus map_p_delta
