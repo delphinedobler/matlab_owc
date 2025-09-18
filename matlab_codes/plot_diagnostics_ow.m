@@ -12,8 +12,9 @@ function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configurati
 %                            mode without opening figure windows.
 %
 %     'appendRef' (string)   Optional suffix to append to figure names
-%                            could be based on the reference data used
-%                            (eg.6902865_3_ctd.png). 
+%                            could be used to record plots obtained using
+%                            different reference data (eg. 6902865_3_ctd.png)
+%                            or using different settings in set_calseries.m.
 %                            Default : '' (no suffix), other suffix should
 %                            start with '_' (eg. '_ctd')
 %
