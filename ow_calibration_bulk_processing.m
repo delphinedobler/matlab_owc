@@ -10,13 +10,13 @@
 %   of la_wmo_boxes array are set to all 0s). 
 %   • wmo_boxes_ctd.mat  : to use only CTD reference data (columns 3 and 4 
 %   la_wmo_boxes array are set to all 0s. 
-%   This can be done using the following code: 
+%   This can be done using the following code:  
 %   load ('./data/constants/wmo_boxes.mat')
 %   la_wmo_boxes(:,[2,3])=0; 
-%   save('./data/constants/wmo_boxes_argo.data') 
+%   save('./data/constants/wmo_boxes_argo.data','la_wmo_boxes') 
 %   load ('./data/constants/wmo_boxes.mat') 
 %   la_wmo_boxes(:,[3,4])=0;
-%   save('./data/constants/wmo_boxes_ctd.data')
+%   save('./data/constants/wmo_boxes_ctd.data','la_wmo_boxes')
 %
 % 
 %  *** From ow_calibration_bulk_CSIRO.m
