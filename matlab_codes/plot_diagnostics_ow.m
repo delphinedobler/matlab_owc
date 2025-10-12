@@ -1,46 +1,116 @@
 
-function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configuration )
+function plot_diagnostics_ow( pn_float_dir, pn_float_name, po_system_configuration,varargin )
 
+%   USAGE :   plot_diagnostics_ow( pn_float_dir, pn_float_name,po_system_configuration)
 %
-% Annie Wong, 14 June 2011
-% Breck Owens, October 2006
+%   Additional options can be specified as name/values pairs:
 %
-% Delphine Dobler (DD), August 2024: 
+%    'goHeadless' (logical)  Optional flag to disable interactive plotting. 
+%                            Default : false.
+%                            When true, figures are generated but not
+%                            displayed allowing scripts to run in batch
+%                            mode without opening figure windows.
+%
+%     'appendRef' (string)   Optional suffix to append to figure names
+%                            could be used to record plots obtained using
+%                            different reference data (eg. 6902865_3_ctd.png)
+%                            or using different settings in set_calseries.m.
+%                            Default : '' (no suffix), other suffix should
+%                            start with '_' (eg. '_ctd')
+%
+%    'pltFileType' (string)  optional string to define the format ot the
+%                            output plots. 
+%                            Default  : '- depsc', alternative are '-dpng'
+%                            or other formattype used by the print matlab
+%                            function
+%
+%    ex: plot_diagnostics_ow( pn_float_dir, pn_float_name,po_system_configuration,'goHeadless',true,'pltFileType','-dpng')
+%-----------------------------------
+% Annie Wong, 14 June 2011 Breck Owens, October 2006
+%
+% Delphine Dobler (DD), August 2024:
 %            2 - create output directory if they do not exist already
 % Delphine Dobler (DD), September 2024:
 %            4.1 - Use of theta levels from those now saved during
-%            calculate_piecewisefit function call (also corrects graph 2 
-%            and 4 in case of several calibration series).
-%            4.2 - For graph 6 and 8: Change indexes names by a more 
-%            explicit terminology: usage of iseq, istep, ilevel, iplot instead of i,j,k ...
-%            Remove unused parameter lines.
-%            These changes were not marked done for the sake of lisibility 
-%            4.3 - Add a configuration parameter to
-%            select from eps or png type of graph format. 
-%            4.4 - Enhance Graph 3: curate legend content, split title in two
-%            lines, add a grid, position the legend outside the graph.
-%            4.5 - Automalically set graph 5 y-axis limits from selected thetas
+%            calculate_piecewisefit function call (also corrects graph 2
+%            and 4 in case of several calibration series). 4.2 - For graph
+%            6 and 8: Change indexes names by a more explicit terminology:
+%            usage of iseq, istep, ilevel, iplot instead of i,j,k ...
+%            Remove unused parameter lines. These changes were not marked
+%            done for the sake of lisibility 4.3 - Add a configuration
+%            parameter to select from eps or png type of graph format. 4.4
+%            - Enhance Graph 3: curate legend content, split title in two
+%            lines, add a grid, position the legend outside the graph. 4.5
+%            - Automalically set graph 5 y-axis limits from selected thetas
 %            and set the upper bound to 14°C.
-% Delphine Dobler (DD), January 2025: account for Cecile Cabanes feedback on changes
-%--------------------------------------------------------------------------
+% Delphine Dobler (DD), January 2025: account for Cecile Cabanes feedback
+% on changes
+%
+% Dirk Slawinski [DS2025] : fixes plots for newer Matlab versions
+
+% C.Cabanes[CC20250916], from Dirk Slawinski (PR#18): 
+% - add a goHeadless option to toggle headless mode [DS2025]
+% - add an appendRef option to append a suffix to figure names 
+% - following the same logic, add a pltFileType option to choose between
+%   differents output file types
+%--------------------------------------------------------------------
 
 %pn_float_dir='uw/';
 %pn_float_name='R5902134';
 %po_system_configuration = load_configuration( 'ow_config.txt' );
 
 outdir=[ po_system_configuration.FLOAT_PLOTS_DIRECTORY pn_float_dir ];
-if not(isfolder(outdir))
+%[CC202509/] use exist(...,'dir')== 7 instead of isfolder for compatibility
+% if not(isfolder(outdir))
+%     mkdir(outdir)
+% end
+if not(exist(outdir,'dir') == 7)
     mkdir(outdir)
 end
+%[/CC202509]
 
-% DD (2024/09 - 4.3) : Configuration parameter to select graph format
-graph_format         = 'eps'; % 'png' or 'eps'
-if strcmp(graph_format,'png')
-    graph_print_option = '-dpng';
+
+% [CC20250916/] % read options
+if mod(length(varargin),2)~=0
+    error('Check the imput arguments : name/value')
 end
-if strcmp(graph_format,'eps')
-    graph_print_option = '-depsc';
+
+optionName = varargin(1:2:end);
+optionValues = varargin(2:2:end);
+userOption = cell2struct(optionValues,optionName,2);
+
+% Default 
+option.goHeadless = false;
+option.appendRef = '';
+option.pltFileType = '-depsc';
+
+knownFields = fieldnames(option);
+
+extraField = setdiff(fieldnames(userOption),knownFields);
+
+if ~isempty(extraField)
+    error('unknown option for plot_diagnostics_ow.m : %s',strjoin(extraFields, ', '));
 end
+
+% User Option 
+for  k = 1:length(knownFields)
+     field = knownFields{k};
+     if isfield(userOption,field)==1
+         option.(field) = userOption.(field);
+     end
+end
+
+graph_print_option = option.pltFileType;
+goHeadless = option.goHeadless;
+% check and format the suffix for figure names
+if ~isempty(option.appendRef)
+    if option.appendRef(1) ~= '_' % ensure the suffix starts with '_'
+       option.appendRef=['_', option.appendRef];
+    end
+end
+appendRef = option.appendRef;
+%[/CC20250916]
+
 
 close all
 
@@ -118,7 +188,15 @@ load( fullfile( po_system_configuration.CONFIG_DIRECTORY, po_system_configuratio
 
 [m,n] = size(PRES);
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -155,24 +233,43 @@ if( max(LONG)+30>360 | min(LONG)-30<0 ) % if there are float data within 30 deg 
   end
 end
 
-
+% float path
 plot(LONG,LAT,'r-');
 hold on
+% historical points
 plot(x,y,'b.')
-%legend('float','historical points','Location','Best')
-plot(coastdata_x,coastdata_y,'k.-');
 
-for i=1:n
-  h=plot(LONG(i),LAT(i),'+');
-  set(h,'color',c(i,:));
-  j=text(LONG(i),LAT(i),int2str(PROFILE_NO(i)));
-  set(j,'color',c(i,:),'fontsize',12,'hor','cen');
-end
+% [DS2025/]
+% legend('float','historical points', 'Location', 'Best')
+% % coast line data
+% plot(coastdata_x, coastdata_y, 'k.-');
+% 
+% for i = 1:n
+%     h = plot(LONG(i), LAT(i), '+');
+%     set(h, 'color', c(i, :));
+%     j = text(LONG(i), LAT(i), int2str(PROFILE_NO(i)));
+%     set(j, 'color', c(i,:),'fontsize', 12, 'hor', 'cen');
+% end % for i = 1:n
+LLscat = scatter(LONG, LAT, '+');
+LLscat.CData = c;
+LLtxt = text(LONG, LAT, strsplit(num2str(PROFILE_NO(:)')));
+for i = 1:n
+    LLtxt(i).Color = c(i, :);
+end % for i = 1:n
+% coast line data
+plot(coastdata_x, coastdata_y, 'k.-');
+legend('float', 'historical points', 'location','Best')
+% [/DS2025]
+
 axis([min(LONG)-30, max(LONG)+30, min(LAT)-20, max(LAT)+20])
 set(gca,'FontSize',12)
 xlabel('Longitude');
 ylabel('Latitude');
-title( strcat(title_floatname, ' profile locations with historical data' ) );
+
+% [DS2025/]
+%title( strcat(title_floatname, ' profile locations with historical data' ) );
+title([title_floatname, ' profile locations with historical data']);
+% [/DS2025]
 
 h=gca;
 xticks=get(h,'XTick');
@@ -193,13 +290,29 @@ end
 set(gca,'XTickLabel',xticklabels);
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1.',graph_format));
 
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation', ...
+%                'portrait', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+    'paperposition', [0.25, 0.75, 8.0, 9.5]);
+% [/DS2025]
+
+%print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1')); %[CC20250916]
+print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_1',appendRef)); 
 
 % plot the uncalibrated theta-S curves from the float (figure 2) --------
 
-figure;
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',14)
@@ -215,16 +328,32 @@ jj = ok;
 
 colormap(jet(n));
 c=colormap;
-qq = plot(PTMP(:,jj), SAL(:,jj));
+
+% [DS2025/]
+%  qq = plot(PTMP(:,jj), SAL(:,jj));
+qq = plot(SAL(:, jj), PTMP(:, jj));
+% [/DS2025]
+
 for i=1:length(jj)
   set(qq(i),'color',c(jj(i),:)) ;
 end
 hold on
-legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+
+% [DS2025/]
+% - adding the legend should be the last thing to add if you are planning
+% to limit what it shows as matla will just append what is added
+% legend(int2str([PROFILE_NO(jj)]'), ...
+%                'Location', 'NorthEastOutside')
+% [/DS2025]
 
 for i=1:n % plot all remaining profiles
-  qq = plot( PTMP(:,i), SAL(:,i) );
-  set(qq,'color',c(i,:)) ;
+    
+    % [DS2025/]
+    %  qq = plot( PTMP(:,i), SAL(:,i) );
+    qq = plot(SAL(:, i), PTMP(:, i));
+    % [/DS2025]
+    
+    set(qq,'color',c(i,:)) ;
 end
 
 % DD (2024/09 - 4.1) : correction when several calibration series: use of saved
@@ -232,29 +361,63 @@ end
 %[tlevels, plevels, index, var_s_Thetalevels, Thetalevels] = find_10thetas( SAL, PTMP, PRES, la_ptmp, use_theta_gt, use_theta_lt, use_pres_gt, use_pres_lt, use_percent_gt);
 
 for i=1:n
-  b = find( isnan(index(:,i))==0 );
-  a = index(b,i);
-  if ~isempty(a)
-   h = errorbar( la_ptmp(a,i), mapped_sal(a,i), mapsalerrors(a,i), 'o', 'color', c(i,:) );
-  end
+    b = find( isnan(index(:,i))==0 );
+    a = index(b,i);
+    if ~isempty(a)
+        
+        % [DS2025/]
+        %h = errorbar( la_ptmp(a, i), mapped_sal(a, i), mapsalerrors(a, i),'o', 'color', c(i, :) );
+         h = errorbar( mapped_sal(a, i), la_ptmp(a, i), mapsalerrors(a, i), 'horizontal','o', 'color', c(i, :));
+        % [/DS2025]  
+    end
 end
 
-view([90 -90]);
+% [DS2025/]
+legend(int2str([PROFILE_NO(jj)]'),'Location', 'NorthEastOutside')
+% [/DS2025]
+
+% [DS2025/]
+% - no need to rotate and create a 3d plot since errorbars can be horizontal
+%            view([90 -90]);
+% [/DS2025]
+
 set(gca,'FontSize',12)
-ylabel('Salinity (PSS-78)');
-xlabel('\theta ^{\circ} C');
+
+% [DS2025/]
+% ylabel('Salinity (PSS-78)');
+% xlabel('\theta ^{\circ} C');
+xlabel('Salinity (PSS-78)');
+ylabel('\theta ^{\circ} C');
+% [/DS2025]
 
 max_s=max([max(SAL),max(mapped_sal)])+.1;
 min_s=min([min(SAL),min(mapped_sal)])-.1;
 max_t=max(max(PTMP))+1;
 min_t=min(min(PTMP))-1;
-axis([min_t,max_t,min_s,max_s]);
+
+% [DS2025/]
+% axis([min_t, max_t, min_s, max_s]);
+axis([min_s, max_s, min_t, max_t]);
+% [/DS2025]
 
 drawnow
-title( strcat( title_floatname, ' uncalibrated float data (-) and mapped salinity (o) with objective errors' ) );
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_2.',graph_format));
 
+% [DS2025/]
+% title( strcat( title_floatname,' uncalibrated float data (-) and mapped salinity (o) with objective errors' ) );
+title({[title_floatname ' uncalibrated float data (-) and'],'mapped salinity (o) with objective errors'});
+% [/DS2025]
+
+
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation', ...
+%                'portrait', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+                'paperposition', [0.25, 0.75, 8.0, 9.5]);
+% [/DS2025]
+
+% print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_2')); %[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_2',appendRef));
 
 % calibration curve (figure 3) --------------------------
 
@@ -287,7 +450,15 @@ for i=1:n
    end
 end
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -338,13 +509,27 @@ ylabel('\Delta S (PSS-78)')
 title({strcat(title_floatname, ' vertically-averaged salinity (PSS-78)');'additive correction \Delta S with errors'});
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_3.',graph_format));
 
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation','portrait',  'paperposition', [0.25, 0.75, 8.0, 9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+% [/DS2025]
+
+% print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_3'));%[CC20250916]
+ print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_3',appendRef))
 
 % plot the calibrated theta-S curves from the float (figure 4) --------------------------
 
-figure;
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',14)
@@ -360,48 +545,94 @@ jj = ok;
 
 colormap(jet(n));
 c=colormap;
-qq=plot( PTMP(:,jj), cal_SAL(:,jj) );
+
+% [DS2025/]
+%  qq = plot( PTMP(:, jj), cal_SAL(:, jj) );
+qq = plot(cal_SAL(:, jj), PTMP(:, jj));
+% [/DS2025]
+
 for i=1:length(jj)
  set(qq(i),'color',c(jj(i),:)) ;
 end
 hold on;
-legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+
+% [DS2025/]
+% legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+% [/DS2025] 
 
 for i=1:n % plot all remaining profiles
-  qq = plot( PTMP(:,i), cal_SAL(:,i) );
-  set(qq,'color',c(i,:)) ;
+    
+    % [DS2025/]
+    %  qq = plot( PTMP(:, i), cal_SAL(:, i) );
+    qq = plot(cal_SAL(:, i), PTMP(:, i));
+    % [/DS2025]
+    
+    set(qq,'color',c(i,:)) ;
 end
 
 for i=1:n
-  b = find( isnan(index(:,i))==0 );
-  a = index(b,i);
-  if ~isempty(a)
-    h = errorbar( la_ptmp(a,i), mapped_sal(a,i), mapsalerrors(a,i), 'o', 'color', c(i,:));
-  end
+    b = find( isnan(index(:,i))==0 );
+    a = index(b,i);
+    if ~isempty(a)
+        % [DS2025/]
+        % h = errorbar( la_ptmp(a, i), mapped_sal(a, i), mapsalerrors(a, i), ...
+        %                            'o', 'color', c(i, :));
+        h = errorbar(mapped_sal(a, i), la_ptmp(a, i), mapsalerrors(a, i), 'horizontal', ...
+            'o', 'color', c(i, :));
+        % [/DS2025]
+    end
 end
 
-view([90 -90]);
-set(gca,'FontSize',12)
-xlabel('\theta ^{\circ} C')
-ylabel('Salinity (PSS-78)')
+% [DS2025/]
+% view([90 -90]);
+% [/DS2025]set(gca,'FontSize',12)
+
+% [DS2025/]  
+% xlabel('\theta ^{\circ} C')
+% ylabel('Salinity (PSS-78)')
+ylabel('\theta ^{\circ} C')
+xlabel('Salinity (PSS-78)')
+% [/DS2025]
 
 max_s=max([max(max(cal_SAL)),max(max(mapped_sal))])+.1;
 min_s=min([min(min(cal_SAL)),min(min(mapped_sal))])-.1;
 max_t=max(max(PTMP))+1;
 min_t=min(min(PTMP))-1;
 if(isnan(min_s)==0)
-  axis([min_t,max_t,min_s,max_s]);
+    % [DS2025/]
+    % axis([min_t,max_t, min_s, max_s]);
+    axis([min_s,max_s, min_t, max_t]);
+    % [/DS2025]
 end
 
 drawnow
-title( strcat(title_floatname, ' calibrated float data (-) and mapped salinity (o) with objective errors' ) );
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_4.',graph_format));
+% [DS2025/]
+% title( strcat(title_floatname,' calibrated float data (-) and mapped salinity (o) with objective errors' ) );
+title({[title_floatname ' calibrated float data (-) and'], ...
+    'mapped salinity (o) with objective errors'});
+legend(int2str([PROFILE_NO(jj)]'), 'Location', 'NorthEastOutside')
+% [/DS2025]
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+%   set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation','portrait', 'paperposition', [0.25, 0.75, 8.0 ,9.5]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+    'paperposition', [0.25, 0.75, 8.0 ,9.5]);
+% [/DS2025]
 
-
+% print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_4'));%[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_4',appendRef))
+ 
 % Brian King's plot: salinity anomaly time series on theta levels (figure 5) ------------
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -411,7 +642,10 @@ fl.plot = 1;
 % DD (2024/09 - 4.5) : automatically set y-axis limits using tlevels; 2025/01: modified from CC's comment
 % fl.yaxes = [2 5 20];
 % fl.yaxes = [floor(min(tlevels,[],'all')) ceil(max(tlevels,[],'all')) ceil(max(TEMP))];
-fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+% [CC202509/]  % keep compatibility with Matlab versions <2018b
+%fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+fl.yaxes = [floor(min(min(TEMP(:)),2)) ceil(min(max(tlevels(:)),5)) ceil(min(max(TEMP(:)),20))];
+% [/CC202509]
 d.PSAL = SAL;
 d.TEMP = TEMP;
 d.PRES = PRES;
@@ -423,12 +657,23 @@ d.LATITUDE = LAT;
 d.PROFILE_NO = PROFILE_NO;
 fl = anom(d,fl); % Brian King's routine
 subplot('position',[.1 .45 .8 .35])
-title(['       Salinity anom on theta.    ' title_floatname])
+
+% [DS2025/]
+% title(['       Salinity anom on theta.    ' title_floatname])
+title(['Salinity anom on theta.' title_floatname])
+% [/DS2025]
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.5,8,10]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_5.',graph_format));
 
+% [DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+%  set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', 'paperorientation', 'portrait', 'paperposition', [0.25, 0.5, 8.0, 10.0]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches',  ...
+                    'paperposition', [0.25, 0.5, 8.0, 10.0]);
+% [/DS2025]
+
+% print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_5'));%[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_5',appendRef))
 
 % plot salinity time series on theta levels with the smallest S variance (figure 6) ------------
 
@@ -606,8 +851,16 @@ for iseq=1:n_seq
             end
         end
     end
-
-    figure
+    
+    % [DS2025/]
+    % figure;
+    if(goHeadless)
+        figure('Visible', 'off');
+    else % if(goHeadless)
+        figure('Visible', 'on');
+    end % if(goHeadless)
+    % [/DS2025]
+    
     set(gcf,'defaultaxeslinewidth',2)
     set(gcf,'defaultlinelinewidth',2)
     set(gcf,'defaultaxesfontsize',16)
@@ -639,19 +892,35 @@ for iseq=1:n_seq
     xlabel('float profile number');
 
     drawnow
-    set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.75,8,9.5]);
-    % CC changes 06/23 figure 6 
+    
+    % [DS2025/]
+    % - matlab indicates that 'paperorientation' is no longer a valid parameter
+    %  set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperorientation', 'portrait', 'paperposition', [0.25, 0.75, 8.0, 9.5]);
+    set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperposition', [0.25, 0.75, 8.0, 9.5]);
+    % [/DS2025]
+    
+    % CC changes 06/23 figure 6
     if length(unique_cal(unique_cal>0))==1
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6'));%[CC20250916]
+        print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_6',appendRef))
     else
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq)),'.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq))));%[CC20250916]
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_6_split_',num2str(unique_cal(iseq)),appendRef));
     end
         
 end % for iseq
 
 % Brian King's plot: salinity anomaly time series on theta levels (figure 7) ------------
 
-figure
+% [DS2025/]
+% figure;
+if(goHeadless)
+    figure('Visible', 'off');
+else % if(goHeadless)
+    figure('Visible', 'on');
+end % if(goHeadless)
+% [/DS2025]
+
 set(gcf,'defaultaxeslinewidth',2)
 set(gcf,'defaultlinelinewidth',2)
 set(gcf,'defaultaxesfontsize',16)
@@ -660,7 +929,12 @@ fl.useqc = '0';
 fl.plot = 1;
 % DD (2024/09 - 4.5) : automatically set y-axis limits using tlevels. 2025/01: modified from CC's comment.
 %fl.yaxes = [2 5 20];
-fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+
+% [CC202509/]  % keep compatibility with Matlab versions <2018b
+%fl.yaxes = [floor(min(min(TEMP,[],'all'),2)) ceil(min(max(tlevels,[],'all'),5)) ceil(min(max(TEMP,[],'all'),20))];
+fl.yaxes = [floor(min(min(TEMP(:)),2)) ceil(min(max(tlevels(:)),5)) ceil(min(max(TEMP(:)),20))];
+% [/CC202509]
+
 d.PSAL = cal_SAL;
 d.TEMP = TEMP;
 d.PRES = PRES;
@@ -675,8 +949,15 @@ subplot('position',[.1 .45 .8 .35])
 title(['Calibrated salinity anom on theta. ' title_floatname])
 
 drawnow
-set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.25,.5,8,10]);
-print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_7.',graph_format));
+
+%[DS2025/]
+% - matlab indicates that 'paperorientation' is no longer a valid parameter
+% set(gcf, 'papertype', 'usletter', 'paperunits', 'inches',' paperorientation','portrait', 'paperposition', [0.25, 0.5, 8.0, 10.0]);
+set(gcf, 'papertype', 'usletter', 'paperunits', 'inches','paperposition', [0.25, 0.5, 8.0, 10.0]);
+% [/DS2025]
+
+% print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_7'));%[CC20250916]
+print(graph_print_option,strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir,pn_float_name, '_7',appendRef))
 
 % Paul Robbins' analyse variance plot (figure 8) ------------
 
@@ -699,7 +980,14 @@ for iseq=1:n_seq
     unique_PTMP = PTMP(:, calindex);
     unique_PRES = PRES(:, calindex);
 
-    figure
+    % [DS2025/]
+    % figure;
+    if(goHeadless)
+        figure('Visible', 'off');
+    else % if(goHeadless)
+        figure('Visible', 'on');
+    end % if(goHeadless)
+    % [/DS2025]
     set(gcf,'defaultaxeslinewidth',1)
     set(gcf,'defaultlinelinewidth',1)
     set(gcf,'defaultaxesfontsize',12)
@@ -712,7 +1000,13 @@ for iseq=1:n_seq
     x = get(gca,'xlim');
     y = get(gca,'ylim');
     xlabel('PSS-78')
-    title(strcat('OW chosen levels - ', pn_float_name));
+    
+    % [DS2025/]
+    % - it apprears strcat() strips trailing blanks
+    % title(strcat('OW chosen levels - ', pn_float_name));
+    title(['OW chosen levels - ', pn_float_name]);
+    % [/DS2025]
+    
     for ilevel=1:10
         hold on
         plot(x,[tlevels(ilevel,iseq) tlevels(ilevel,iseq)] ,'g-');
@@ -726,8 +1020,14 @@ for iseq=1:n_seq
         hold on
         plot(x,[tlevels(ilevel,iseq) tlevels(ilevel,iseq)] ,'g-');
     end
-    %title('Salinity Variance on Theta')
-    title(['Salinity Variance on Theta, cycles ' num2str(PROFILE_NO(calindex(1))) '-' num2str(PROFILE_NO(calindex(end))) ])  %CC changes 06/23
+    
+    % [DS2025/]
+    % title(['Salinity Variance on Theta, cycles '  num2str(PROFILE_NO(calindex(1))) '-' num2str(PROFILE_NO(calindex(end))) ])  %CC changes 06/23
+    title({'Salinity Variance on Theta', ...
+        ['cycles: ' num2str(PROFILE_NO(calindex(1))) '-' ...
+        num2str(PROFILE_NO(calindex(end)))]})
+    % [/DS2025]
+    
     ylabel('Potential temp (^{\circ}C)')
     xlabel('salinity variance')
     %set(gca,'ylim',y)
@@ -739,7 +1039,12 @@ for iseq=1:n_seq
     x = get(gca,'xlim');
     xlabel('^{\circ}C')
     ylabel('Pressure (dbar)')
-    title(strcat('OW chosen levels - ', pn_float_name));
+    
+    %[DS2025/]
+    %title(strcat('OW chosen levels - ', pn_float_name));
+    title(['OW chosen levels - ', pn_float_name]);
+    % [/DS2025]    
+    
     for ilevel=1:10
         hold on
         plot(x,[-plevels(ilevel,iseq) -plevels(ilevel,iseq)] ,'g-');
@@ -751,7 +1056,12 @@ for iseq=1:n_seq
     plot(unique_SAL,-unique_PRES,'b-'); %CC changes 06/23
     x = get(gca,'xlim');
     xlabel('PSS-78')
-    title(strcat('OW chosen levels - ', pn_float_name));
+    
+    % [DS2025/]
+    % title(strcat('OW chosen levels - ', pn_float_name));
+    title(['OW chosen levels - ', pn_float_name]);
+    % [/DS2025]
+    
     for ilevel=1:10
         hold on
         plot(x,[-plevels(ilevel,iseq) -plevels(ilevel,iseq)] ,'g-');
@@ -759,11 +1069,22 @@ for iseq=1:n_seq
 
 
     drawnow
-    set(gcf,'papertype','usletter','paperunits','inches','paperorientation','portrait','paperposition',[.5,.25,8,10.25]);
+    
+    % [DS2025/]
+    % - matlab indicates that 'paperorientation' is no longer a valid parameter
+    %                        set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+    %                            'paperorientation', 'portrait', 'paperposition', ...
+    %                            [0.5, 0.25, 8.0, 10.25]);
+    set(gcf, 'papertype', 'usletter', 'paperunits', 'inches', ...
+        'paperposition', [0.5, 0.25, 8.0, 10.25]);
+    % [/DS2025] 
+    
     if length(unique_cal(unique_cal>0))==1
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8'));%[CC20250916]
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8',appendRef));
     else
-      print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq)), '.',graph_format));
+%         print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq))));%[CC20250916]
+        print(graph_print_option, strcat(po_system_configuration.FLOAT_PLOTS_DIRECTORY, pn_float_dir, pn_float_name, '_8_split_', num2str(unique_cal(iseq)),appendRef));
     end
 
 end

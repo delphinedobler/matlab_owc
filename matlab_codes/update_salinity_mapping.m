@@ -34,10 +34,15 @@ function update_salinity_mapping( pn_float_dir, pn_float_name, po_system_configu
 
 % DD (2024/08-2)
 outdir=[ po_system_configuration.FLOAT_MAPPED_DIRECTORY pn_float_dir ];
-if not(isfolder(outdir))
-    mkdir(outdir)
+%[CC202509/] use exist(...,'dir')== 7 instead of isfolder for compatibility
+% with Matlab < 2017b
+% if not(isfolder(outdir))
+%     mkdir(outdir)
+% end
+%[/CC202509]
+if not(exist(outdir,'dir') == 7)
+     mkdir(outdir)
 end
-
 % load float source data ----------------------------------------
 
 filename = fullfile( po_system_configuration.FLOAT_SOURCE_DIRECTORY, pn_float_dir, strcat( pn_float_name, po_system_configuration.FLOAT_SOURCE_POSTFIX ) );
@@ -128,11 +133,14 @@ clear a i
 n_profiles=length( missing_profile_index );
 % loaded_box record initialisation
 loaded_bbox.n_profiles=n_profiles;
-loaded_bbox.CTD.description="CTD loaded_boxes";
-loaded_bbox.ARGO.description="ARGO loaded_boxes";
-loaded_bbox.BOTTLE.description="BOTTLE loaded_boxes";
-
-
+% [CC202509/] % use '..' instead of "...." for compatibility with Matlab version <2017a
+%loaded_bbox.CTD.description="CTD loaded_boxes";
+%loaded_bbox.ARGO.description="ARGO loaded_boxes";
+%loaded_bbox.BOTTLE.description="BOTTLE loaded_boxes";
+loaded_bbox.CTD.description='CTD loaded_boxes';
+loaded_bbox.ARGO.description='ARGO loaded_boxes';
+loaded_bbox.BOTTLE.description='BOTTLE loaded_boxes';
+% [/CC202509]
 % update mapped data matrix by missing_profile_index --------------------
 
 for i = 1 : n_profiles

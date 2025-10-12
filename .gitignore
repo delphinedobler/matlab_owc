@@ -1,4 +1,6 @@
 ow_config_*
 ow_calibration_*
+!ow_calibration_bulk_processing.m
+ow_calibration_bulk_processing_*
 set_calseries_*
 ~$*

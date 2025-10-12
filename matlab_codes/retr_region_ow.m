@@ -30,8 +30,8 @@ function [ pa_grid_sal, pa_grid_ptmp, pa_grid_pres, pa_grid_lat, pa_grid_long, p
 %           new index input.
 %     - 3.2: save loaded data, and at each following profile, 
 %            reload only new boxes and delete unused.
-
-
+%
+% % K. Walicka [KW2025] : update for Matlab 2024b
 
 zz = (isnan(P)==0);
 max_p = max(P(zz))+map_p_delta; % max depth to retrieve historical data is deepest Argo point plus map_p_delta
@@ -60,7 +60,8 @@ if size(list_CTD_loaded_boxes,1) > 1
     list_CTD_loaded_boxes_to_delete=list_CTD_loaded_boxes(~ismember(list_CTD_loaded_boxes,pa_wmo_numbers(:,1)));
     
     if size(list_CTD_loaded_boxes_to_delete,1)> 0
-        for i_box_to_delete=1:size(list_CTD_loaded_boxes_to_delete)
+        %for i_box_to_delete=1:size(list_CTD_loaded_boxes_to_delete) % [CC2025]
+        for i_box_to_delete=1:size(list_CTD_loaded_boxes_to_delete,1)
             loaded_bbox.CTD=rmfield(loaded_bbox.CTD,(['box_' num2str(list_CTD_loaded_boxes_to_delete(i_box_to_delete))]));
         end
     end
@@ -73,8 +74,10 @@ if size(list_ARGO_loaded_boxes,1) > 1
     list_ARGO_loaded_boxes=str2double(list_ARGO_loaded_boxes(2:end));
     list_ARGO_loaded_boxes_to_delete=list_ARGO_loaded_boxes(~ismember(list_ARGO_loaded_boxes,pa_wmo_numbers(:,1)));
     
-    if size(list_ARGO_loaded_boxes_to_delete)> 0
-        for i_box_to_delete=1:size(list_ARGO_loaded_boxes_to_delete)
+    %if size(list_ARGO_loaded_boxes_to_delete)> 0  % [CC2025]
+    if size(list_ARGO_loaded_boxes_to_delete,1)> 0 
+        %for i_box_to_delete=1:size(list_ARGO_loaded_boxes_to_delete) % [CC2025]
+        for i_box_to_delete=1:size(list_ARGO_loaded_boxes_to_delete,1) 
             loaded_bbox.ARGO=rmfield(loaded_bbox.ARGO,(['box_' num2str(list_ARGO_loaded_boxes_to_delete(i_box_to_delete))]));
         end
     end
@@ -87,8 +90,10 @@ if size(list_BOTTLE_loaded_boxes,1) > 1
     list_BOTTLE_loaded_boxes=str2double(list_BOTTLE_loaded_boxes(2:end));
     list_BOTTLE_loaded_boxes_to_delete=list_BOTTLE_loaded_boxes(~ismember(list_BOTTLE_loaded_boxes,pa_wmo_numbers(:,1)));
     
-    if size(list_BOTTLE_loaded_boxes_to_delete)> 0
-        for i_box_to_delete=1:size(list_BOTTLE_loaded_boxes_to_delete)
+    %if size(list_BOTTLE_loaded_boxes_to_delete)> 0 % [CC2025]
+    if size(list_BOTTLE_loaded_boxes_to_delete,1)> 0 
+        %for i_box_to_delete=1:size(list_BOTTLE_loaded_boxes_to_delete) % [CC2025]
+        for i_box_to_delete=1:size(list_BOTTLE_loaded_boxes_to_delete,1) 
             loaded_bbox.BOTTLE=rmfield(loaded_bbox.BOTTLE,(['box_' num2str(list_BOTTLE_loaded_boxes_to_delete(i_box_to_delete))]));
         end
     end
@@ -151,7 +156,10 @@ for ln_index = 1:n_boxes
                     for i=1:length(lo_box_data.lat)
                       profile=lo_box_data.source{i};
                       jj=findstr(profile,'_');
-                      ref_float=profile(1:jj-1);
+                      %[KW2025/]
+                      %ref_float=profile(1:jj-1);
+                      ref_float=profile(1:jj(1)-1);
+                      %[KW2025/]
                       kk=findstr(pa_float_name, ref_float);
                       if(isempty(kk)==0)
                         not_use=[not_use,i];
