@@ -14,11 +14,22 @@ or download and unzip the zip file (Clone or download button)
 You can also access the different releases here: 
 https://github.com/ArgoDMQC/matlabow/releases
 
+# How to contribute ?
+
+In the main repository  [ArgoDMQC/matlab_owc](https://github.com/ArgoDMQC/matlab_owc) :
+
+- master holds stable releases
+- develop is used for ongoing development work
+
+ To contribute, please follow the [contribution guidelines](https://github.com/ArgoDMQC/matlab_owc/blob/develop/contributing.md).  
+Contributors without write access can fork the repository and submit a Pull Request to the `develop` branch.
+
+
 # How to run the analysis?
 Here is a summary of what should be done to run the analysis, please read the ./doc/README.doc file for more details
 
 
-1. All files are to be used in MATLAB. The full package was tested with MATLAB R2014a. In addition, you will need:
+1. All files are to be used in MATLAB. The full package was tested with MATLAB R2018b, R2020b, R2021b and R2024b. In addition, you will need:
 a). The MATLAB Optimization Toolbox;
 b). The ITS-90 version of the CSIRO SEAWATER library. The version 3\_3.0 of this library can be found in ./lib/seawater\_330\_its90. Please update if necessary.
 c). The M_MAP toolbox. The version  1.4.c of this library can be found in ./lib/m\_map1.4. Please update if necessary.
@@ -30,7 +41,7 @@ c). The M_MAP toolbox. The version  1.4.c of this library can be found in ./lib/
 REFERENCE DATA can be obtain at ftp.ifremer.fr
 cd /coriolis/data/DMQC-ARGO/   (if you need a login/pswd ask codac@ifremer.fr)
 
-Then, create/update your ./data/constants/wmo\_boxes.mat file (more details in ./doc/README.doc, p3)
+Then, create/update your ./data/constants/wmo\_boxes.mat file (more details in ./doc/README.doc, p4)
 
 4. After you have decided where you want to install the package on your computer, edit ow\_config.txt at the following lines so the correct pathways are specified:
 
@@ -50,6 +61,8 @@ Then, create/update your ./data/constants/wmo\_boxes.mat file (more details in .
 /data/float\_calib/project\_xx
 /data/float\_plots/project\_xx
 
+Note that, since version 3.1 of the software, /data/float_mapped/project_xx, /data/float_calib/project_xx, /data/float_plots/project_xx will be automatically created if they do not exist.
+
 7.  Create the float source file (./data/float\_source/project\_xx/$flt\_name$.mat) from the original netcdf files (more details in ./doc/README.doc,p6)
 
 8. Open MATLAB in the top directory. List all the float files in a cell array "float\_names", with the corresponding subdirectories in another cell array "float_dirs". For example,
@@ -59,5 +72,10 @@ float_names = { 'float0001'; 'float0002'; 'myfloat\_a'; 'myfloat\_b' }.
 Tips: If the files are not saved under a subdirectory and are only saved under ./float\_source/, specify float\_dirs = { ''; ''; ''; '' }, etc.
 
 Run ow\_calibration.m. 
+
+
+**Tips for bulk processing**: The original ow_calibration.m script supports bulk processing, but it is limited due to frequent interactive plot pop-ups and by the fact that results from different calibrations are not saved. To address this, ow_calibration_bulk_processing.m can be used to process multiple floats in a non-interactive mode, calibrating against the Argo reference database and, optionally, against the CTD reference database.
+
+
 
 

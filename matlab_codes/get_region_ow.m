@@ -21,6 +21,8 @@ function [ pa_grid_lat, pa_grid_long, pa_grid_dates, pa_grid_box_id ] = get_regi
 % D.Dobler (DD), August 2024: to save more time later in retr_region_ow: also output
 % corresponding boxes ids. Additional minor modifications: comment date_hist as it is unused, and
 % correct indentation twice.
+%
+% % K. Walicka [KW2025] : update for Matlab 2024b
 
 pa_grid_lat    = [ ] ;
 pa_grid_long   = [ ] ;
@@ -60,7 +62,10 @@ for ln_index = 1:m
                 for i=1:length(lo_box_data.lat)
                   profile=lo_box_data.source{i};
                   jj=findstr(profile,'_');
-                  ref_float=profile(1:jj-1);
+                  %[KW2025/]
+                  %ref_float=profile(1:jj-1);
+                  ref_float = profile(1:jj(1)-1);
+                  %[/KW2025]
                   kk=findstr(pa_float_name, ref_float);
                   if(isempty(kk)==0)
                     not_use=[not_use,i];

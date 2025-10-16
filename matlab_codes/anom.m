@@ -42,6 +42,10 @@ function fl = anom(d,fl)
 % note that the arrays contain a large number of zeros
 % for depth levels greater than 100. These can be sorted out with
 % something like snan = find(S < 1) and T(snan) = nan; P(snan) = nan; S(snan) = nan; etc
+%
+% UPDATES:
+%   [05/06/25] Dirk Slawinski
+%   - [DS2025] disabled xticklabels on upper contour plot 
 
 
 theta_base = 0.1:.1:30;
@@ -231,8 +235,13 @@ clev = [-.1 -.08 -.06 -.04 -.02 -.01 -.005 0 .005 .01 .02 .04 .06 .08 .1]; %cont
     %xlabel('profile number')
     %ylabel(['theta'])
     
-%AW    disp('Plotting second contour section')
- 
+    % [DS2025/]
+    % - the top plot does not need xticks.
+    xticklabels({})
+    % [/DS2025]
+    
+    %AW    disp('Plotting second contour section')
+    
     subplot('position',[.1 .1 .8 .35])
     
     splot = Sanom(y1,x1:x2);
