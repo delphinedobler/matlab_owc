@@ -20,14 +20,9 @@ https://github.com/ArgoDMQC/matlabow/releases
 In the main repository  [ArgoDMQC/matlab_owc](https://github.com/ArgoDMQC/matlab_owc) :
     - master holds stable releases
     - develop is used for ongoing development work
- Step | Action (no need for write acces)|
-|------|--------|
-| 1⃣  | Fork the main matlab_owc repository on Github and clone it locally
-| 2⃣  | Create a new branch from `develop` for your work |
-| 3⃣  | Make your changes and commits them |
-| 4⃣  | Push your branch to your fork |
-| 5⃣  | Open a Pull Request against `develop` in the main repository |
-| 6⃣  | Update your branch if review requests changes |
+
+ To contribute, please follow the [contribution guidelines](CONTRIBUTING.md).  
+Contributors without write access can fork the repository and submit a Pull Request to the `develop` branch.
 
 
 # How to run the analysis?
