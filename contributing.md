@@ -2,9 +2,11 @@ Contribution Guidelines for `matlab_owc`
 
 This document explains how to contribute to [ArgoDMQC/matlab_owc](https://github.com/ArgoDMQC/matlab_owc). 
 A write access is not necessary.
+
 In the main repository  [ArgoDMQC/matlab_owc](https://github.com/ArgoDMQC/matlab_owc) :
-    - master holds stable releases
-    - develop is used for ongoing development work
+
+- master holds stable releases
+- develop is used for ongoing development work
 
 ### 1. Fork the repository
 1. Go to [ArgoDMQC/matlab_owc](https://github.com/ArgoDMQC/matlab_owc).  
@@ -81,3 +83,4 @@ git push origin feature/my-new-feature
 - Your Pull Request will be rewied
 - if changes are required → update your branch and push again.
 - Once approved, it will be merged into develop.
+
