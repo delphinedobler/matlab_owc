@@ -21,7 +21,7 @@ In the main repository  [ArgoDMQC/matlab_owc](https://github.com/ArgoDMQC/matlab
 - master holds stable releases
 - develop is used for ongoing development work
 
- To contribute, please follow the [contribution guidelines](CONTRIBUTING.md).  
+ To contribute, please follow the [contribution guidelines](https://github.com/ArgoDMQC/matlab_owc/blob/develop/contributing.md).  
 Contributors without write access can fork the repository and submit a Pull Request to the `develop` branch.
 
 
@@ -75,6 +75,7 @@ Run ow\_calibration.m.
 
 
 **Tips for bulk processing**: The original ow_calibration.m script supports bulk processing, but it is limited due to frequent interactive plot pop-ups and by the fact that results from different calibrations are not saved. To address this, ow_calibration_bulk_processing.m can be used to process multiple floats in a non-interactive mode, calibrating against the Argo reference database and, optionally, against the CTD reference database.
+
 
 
 
